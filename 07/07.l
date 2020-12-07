@@ -41,7 +41,7 @@
 
 (setq List3 (mapcar 'content List2))
 
-(println "N: " (length (filter '((X) (assoc "shiny gold" X)) List3)))
+(prinl "N: " (length (filter '((X) (assoc "shiny gold" X)) List3)))
 
 # 7b
-(prinl "N: " (apply + (mapcar '((B) (cdr B)) (cdr (content (assoc "shiny gold" List2))))))
+(prinl "N: " (apply '+ (mapcar 'cdr (cdr (content (assoc "shiny gold" List2))))))
