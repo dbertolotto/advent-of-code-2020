@@ -63,7 +63,7 @@
   (= Side (caddr (assoc T *Tokens))))
 
 (de process (Expr)
-  (use Out Oper
+  (use (Out Oper)
     (while Expr
       (let Token (pop 'Expr)
         (cond
