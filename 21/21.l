@@ -4,44 +4,51 @@
 (setq DemoInp (in "demo.txt" (till NIL)))
 (setq DemoBlocks (filter 'and (split DemoInp "\n")))
 
-(class +BTree)
-(dm put> (K V)
-  (del> This K)
-  (idx (:: D) (cons K V) T))
-(dm del> (K)
-  (if (lup (: D) K)
-    (idx (:: D) @ NIL)))
-(dm get> (K)
-  (cdr (lup (: D) K)))
-(dm size> ()
-  (length (list> This)))
-(dm bal> ()
-  (bal ance (:: D) (list> This)))
-(dm list> ()
-  (idx (:: D)))
-
 # 21a
-(setq Ingr (new '(+BTree)))
-(setq DemoIngr (new '(+BTree)))
-
-(setq *SuspiciousIngr '())
-
 (de parse (Food)
   (let (Line (str (pack Food))
         Ingredients (filter atom Line)
-        Allergenes (cddr (filter lst? Line)))
-    (!for A Allergenes
+        Allergenes (cdr (last Line)))
+    (for A Allergenes
       (for I Ingredients
-        (push '*SuspiciousIngr (cons A I))))))
+        (push '*Ingr (cons A I))))))
 
-(setq DemoList (mapcar parse DemoBlocks))
+(de parse-all (Blocks)
+  (let *Ingr '()
+    (uniq (mapcar parse Blocks))
+    *Ingr))
 
-#(setq DemoList (mapcar '((X) (filter atom (str (pack X)))) DemoBlocks))
-#
-#(mapcar '((D)
-#          (mapcar '((I)
-#                    (if (get> DemoIngr I)
-#                      (put> DemoIngr I (inc @))
-#                      (put> DemoIngr I 1)))
-#                  D))
-#        DemoList)
+(setq Ingr (parse-all Blocks))
+(setq DemoIngr (parse-all DemoBlocks))
+
+(de set-of (@Allergen Ingr)
+  (macro
+    (uniq
+      (mapcar cdr
+              (filter '((X) (= (car X) '@Allergen))
+                      Ingr)))))
+
+(de reduce (Fun Lst Init)
+  (if (= NIL Lst)
+    Init
+    (if (= NIL Init)
+      (reduce Fun (cddr Lst) (Fun (car Lst) (cadr Lst)))
+      (reduce Fun (cdr Lst) (Fun Init (car Lst))))))
+
+(de allergenes (Ingr)
+  (uniq (mapcar car Ingr)))
+
+(de ingredients (Ingr)
+  (uniq (mapcar cdr Ingr)))
+
+(de sets (Ingr)
+  (mapcar '((A) (set-of A Ingr)) (allergenes Ingr)))
+
+(setq *Safe '())
+
+(de find-safe (Ingr)
+  (let (Safe (car (reduce 'sect (sets Ingr)))
+        NewIngr (filter '((X) (<> (cdr X) Safe)) Ingr)
+        NewSets (sets NewIngr))
+    (push '*Safe Safe)
+    NewSets))
