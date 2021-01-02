@@ -1,32 +1,38 @@
-(setq Inp (in "21.txt" (till NIL)))
-(setq Blocks (filter 'and (split Inp "\n")))
+(setq *Inp (in "21.txt" (till NIL)))
+(setq *Foods (filter 'and (split *Inp "\n")))
 
-(setq DemoInp (in "demo.txt" (till NIL)))
-(setq DemoBlocks (filter 'and (split DemoInp "\n")))
+(setq *DemoInp (in "demo.txt" (till NIL)))
+(setq *DemoFoods (filter 'and (split *DemoInp "\n")))
+
+(de parse (Food)
+  (let (Data (str (pack Food))
+        Ingredients (filter atom Data)
+        Allergenes (cdr (last Data)))
+    (for A Allergenes
+      (push '*F (cons A Ingredients)))))
+
+(de parse-all (Foods)
+  (let *F '()
+    (mapcar parse Foods)
+    *F))
+
+(de all-ingredients (Foods)
+  (let *I '()
+    (mapcar '((F) (push '*I (filter atom (str (pack F))))) Foods)
+    (fish atom *I)))
+
+(setq *Ingredients (all-ingredients *Foods))
+(setq *DemoIngredients (all-ingredients *DemoFoods))
+
+(setq *IngrSets (parse-all *Foods))
+(setq *DemoIngrSets (parse-all *DemoFoods))
 
 # 21a
-(de parse (Food)
-  (let (Line (str (pack Food))
-        Ingredients (filter atom Line)
-        Allergenes (cdr (last Line)))
-    (for A Allergenes
-      (for I Ingredients
-        (push '*Ingr (cons A I))))))
+(de allergenes (IngrSets)
+  (uniq (mapcar car IngrSets)))
 
-(de parse-all (Blocks)
-  (let *Ingr '()
-    (uniq (mapcar parse Blocks))
-    *Ingr))
-
-(setq Ingr (parse-all Blocks))
-(setq DemoIngr (parse-all DemoBlocks))
-
-(de set-of (@Allergen Ingr)
-  (macro
-    (uniq
-      (mapcar cdr
-              (filter '((X) (= (car X) '@Allergen))
-                      Ingr)))))
+(de ingredients (IngrSets Unique)
+  (uniq (fish atom (mapcar cdr IngrSets))))
 
 (de reduce (Fun Lst Init)
   (if (= NIL Lst)
@@ -35,20 +41,58 @@
       (reduce Fun (cddr Lst) (Fun (car Lst) (cadr Lst)))
       (reduce Fun (cdr Lst) (Fun Init (car Lst))))))
 
-(de allergenes (Ingr)
-  (uniq (mapcar car Ingr)))
+(de sumup (@Allergene IngrSets)
+  (macro (filter '((S) (= '@Allergene (car S))) IngrSets)))
 
-(de ingredients (Ingr)
-  (uniq (mapcar cdr Ingr)))
+(de sets (IngrSets)
+  (mapcar cdr IngrSets))
 
-(de sets (Ingr)
-  (mapcar '((A) (set-of A Ingr)) (allergenes Ingr)))
+(de narrow (Allergene IngrSets)
+  (let Sets (sets (sumup Allergene IngrSets))
+    (if (> (length Sets) 1)
+      (reduce 'sect Sets)
+      (car Sets))))
 
-(setq *Safe '())
+(de narrow-all (IngrSets)
+  (mapcar '((A) (cons A (narrow A IngrSets))) (allergenes IngrSets)))
 
-(de find-safe (Ingr)
-  (let (Safe (car (reduce 'sect (sets Ingr)))
-        NewIngr (filter '((X) (<> (cdr X) Safe)) Ingr)
-        NewSets (sets NewIngr))
-    (push '*Safe Safe)
-    NewSets))
+(setq *Candidates (narrow-all *IngrSets))
+(setq *DemoCandidates (narrow-all *DemoIngrSets))
+
+(setq *Safe (diff (ingredients *IngrSets) (ingredients *Candidates)))
+(setq *DemoSafe (diff (ingredients *DemoIngrSets) (ingredients *DemoCandidates)))
+
+(de solve-pt1 (Safe Ingredients)
+  (length (sect Ingredients Safe)))
+
+(test 5 (solve-pt1 *DemoSafe *DemoIngredients))
+(prinl "count: " (solve-pt1 *Safe *Ingredients))
+
+# 21b
+(de find-dangerous (Candidates)
+  (let (Cand (copy Candidates)
+        *D '())
+    (while Cand
+      (for C (copy Cand)
+        (when (= 2 (length C))
+          (push '*D C)
+          (setq Cand (delete C Cand))
+          (setq Cand (mapcar '((X) (delete (cadr C) X)) Cand)))))
+    *D))
+
+(setq *Dangerous (find-dangerous *Candidates))
+(setq *DemoDangerous (find-dangerous *DemoCandidates))
+
+(de interwine (List1 List2)
+  (make
+    (loop
+      (link (pop 'List1) (pop 'List2))
+      (NIL List1)
+      (NIL List2))))
+
+(de canonical (Dangerous)
+  (pack (head -1 (interwine (mapcar cadr (by car sort Dangerous))
+                            (need (length Dangerous) ",")))))
+
+(test "mxmxvkd,sqjhc,fvjkl" (canonical *DemoDangerous))
+(prinl "canonical: " (canonical *Dangerous))
