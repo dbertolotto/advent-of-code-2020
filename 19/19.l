@@ -95,12 +95,12 @@
 (prinl "res: " (count-res (mapcar check0 Messages)))
 
 # 19b
-(setq *Rules (mapcar parse-rule Demo2RawRules))
-(test 3 (count-res (mapcar check0 Demo2Messages)))
+#(setq *Rules (mapcar parse-rule Demo2RawRules))
+#(test 3 (count-res (mapcar check0 Demo2Messages)))
 
-(push '*Rules (parse-rule (chop "8: 42 | 42 8")))
-(push '*Rules (parse-rule (chop "11: 42 31 | 42 11 31")))
+#(push '*Rules (parse-rule (chop "8: 42 | 42 8")))
+#(push '*Rules (parse-rule (chop "11: 42 31 | 42 11 31")))
 
-(test 12 (count-res (mapcar check0 Demo2Messages)))
+#(test 12 (count-res (mapcar check0 Demo2Messages)))
 
 #(prinl "res: " (count-res (mapcar check0 Messages)))
